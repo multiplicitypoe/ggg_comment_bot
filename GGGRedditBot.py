@@ -26,7 +26,7 @@ ts_format = '%I:%M%p %m/%d/%y UTC'                      # Timestamp format strin
 # Format string for header of section
 # {name} - comment author
 def header_string_format():
-    return '# [{name}](https://www.reddit.com/user/{name}/)\n\n***'
+    return '##### [{name}](https://www.reddit.com/user/{name}/)\n\n***'
 
 # Create a snippet of a comment
 # comment - reddit comment object
@@ -134,14 +134,14 @@ reddit = praw.Reddit(user_agent=user_agent_string,
                      password=account_password)
 
 subreddit = reddit.subreddit(subreddit_name)                                                        # connect to specified subreddit
-count = 1                                                                                           # variable for counting parsed comments
+# count = 1                                                                                           # variable for counting parsed comments
 
 while True:                                                                                         # main loop to keep bot running
     try:                                                                                            # try around stream in case connection fails
         for comment in subreddit.stream.comments(skip_existing = True):                             # open up a stream of comments, starting from this exact instance onward
             try:                                                                                    # try in case failure during parse
-                print(str(count) + ': ' + comment.author.name)                                      # Used to log display progress. Isn't needed
-                count += 1                                                                          # Updated counter to visualize progress. Isn't needed
+                # print(str(count) + ': ' + comment.author.name)                                      # Used to log display progress. Isn't needed
+                # count += 1                                                                          # Updated counter to visualize progress. Isn't needed
                 if comment.author.name in ggg_emps:                                                 # check if comment author in ggg_emps list
                     link = comment.submission                                                       # get submission object comment is attributed to
                     edit = False                                                                    # Flag for whether or not bot is editing a comment or posting a new one
