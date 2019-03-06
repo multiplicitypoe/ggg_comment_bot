@@ -82,8 +82,8 @@ ggg_emps = [
 ]
 
 if (debug):
-    subreddit_name = 'iMalevolence'                     # Debugging Subreddit
-    ggg_emps = ['iMalevolence']                         # Debugging List of Users
+    subreddit_name = ''                                 # Debugging Subreddit
+    ggg_emps = []                                       # Debugging List of Users
     my_comments_file = "debug_comments.pickle"          # Debugging Stored Comments of Bot
     last_comments_file = "debug_last.pickle"            # Debugging Last Comment of Bot
 
