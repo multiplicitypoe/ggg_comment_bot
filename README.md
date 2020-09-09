@@ -1,5 +1,5 @@
 # GGGCommentBot
-A small Reddit bot for the Path of Exile community.
+A small Reddit bot for the Path of Exile community. By kjennet, modified by multiplicitypoe
 
 1. Install Python
 2. `pip install praw`
@@ -15,4 +15,4 @@ A small Reddit bot for the Path of Exile community.
 7. Set `account_password` to the reddit bot account password
 8. Change any of the other variables you want
 
-__That *should* be everything, but I don't actually remember.__
+

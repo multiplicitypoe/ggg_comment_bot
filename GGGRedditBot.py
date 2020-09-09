@@ -9,24 +9,24 @@ debug = False
 # START VARIABLES #
 # APP Variables and Login Information
 user_agent_string = 'PoE GGG Bot'                       # Identify the Bot
-client_id_string = ''                                   # Personal Use Script Key
-client_secret_string = ''                               # Secret Key for the App
-account_username = ''                                   # Reddit Account Username
-account_password = ''                                   # Reddit Account Password
+account_username = 'account name'                                   # Reddit Account Username
+account_password = 'password here'                                   # Reddit Account Password
+client_id_string = 'client id here' 
+client_secret_string = 'client secret here'
 
 # Setup and Use Variables
 subreddit_name = 'pathofexile'                          # Subreddit (sets subreddit to parse)
 my_comments_file = "my_comments.pickle"                 # Location for Bot Comment Links per Submission
 last_comments_file = "last_comments.pickle"             # Location for Username of Last GGG post in Submission
 connect_timeout = 10                                    # Timeout delay (in seconds) before next connection attempt
-snippet_word_count = 10                                 # Snippet Word Count (number of words to include in snippet)
-context_depth = 3                                       # Permalink will provide context by showing parents of this many levels up from the linked comment
+snippet_word_count = 14                                 # Snippet Word Count (number of words to include in snippet)
+context_depth = 10                                       # Permalink will provide context by showing parents of this many levels up from the linked comment
 ts_format = '%I:%M%p %m/%d/%y UTC'                      # Timestamp format string (for more info => https://docs.python.org/2/library/datetime.html#strftime-and-strptime-behavior)
 
 # Format string for header of section
 # {name} - comment author
 def header_string_format():
-    return '##### [{name}](https://www.reddit.com/user/{name}/)\n\n***'
+    return '##### GGG Comments in this Thread:\n\n***'
 
 # Create a snippet of a comment
 # comment - reddit comment object
@@ -43,19 +43,21 @@ def create_snippet(comment, word_count):
 # {comment_link} - Everything after the reddit.com in the url
 # {comment_author} - Name of the comment author
 # {text_snippet} - Snippet of Comment using snippet_word_count words
+# {full_comment_text} - The full comment text for use in hover previews
 # {context_depth} - Number of parent comments up to show
 def line_string_format():
-    return '\n\n[[{time}](https://www.reddit.com{comment_link}?context={context_depth})] - *{text_snippet}*\n\n'
+    # return '\n\n[{name} - [link](https://www.reddit.com{comment_link}?context={context_depth} "{full_comment_text}"), [old](https://old.reddit.com{comment_link}?context={context_depth} "{full_comment_text}")] - *{text_snippet}*\n\n'
+    return '\n\n[{name} - [link](https://www.reddit.com{comment_link}?context={context_depth}), [old](https://old.reddit.com{comment_link}?context={context_depth})] - *{text_snippet}*\n\n'
 
 # Bot Response Footer
-footer = '***\n\n*I am a Bot. This post was generated automatically. If you have questions, concerns, criticism, praise, or advice, let me hear it.*'
+footer = '***\n\n*This post was generated automatically.*'
+footer = ''
 
 # List of GGG Employees --- TODO NEEDS UPDATED
 ggg_emps = [
     'chris_wilson',
     'Bex_GGG',
     'Negitivefrags',
-    'qarldev',
     'Rory_Rackham',
     'Omnitect',
     'Mark_GGG',
@@ -78,7 +80,10 @@ ggg_emps = [
     'Jeff_GGG',
     'Stacey_GGG',
     'Openarl',
-    'Natalia_GGG'
+    'Natalia_GGG',
+    'Natalia2_GGG',
+    'viperesque',
+    'ZaccieA',
 ]
 
 if (debug):
@@ -134,6 +139,7 @@ reddit = praw.Reddit(user_agent=user_agent_string,
                      password=account_password)
 
 subreddit = reddit.subreddit(subreddit_name)                                                        # connect to specified subreddit
+print('Started bot')
 # count = 1                                                                                           # variable for counting parsed comments
 
 while True:                                                                                         # main loop to keep bot running
@@ -143,41 +149,44 @@ while True:                                                                     
                 # print(str(count) + ': ' + comment.author.name)                                      # Used to log display progress. Isn't needed
                 # count += 1                                                                          # Updated counter to visualize progress. Isn't needed
                 if comment.author.name in ggg_emps:                                                 # check if comment author in ggg_emps list
+                    now = datetime.now()
+                    print('Found GGG comment to reply to at {}: /u/{}'.format(now, comment.author.name))
                     link = comment.submission                                                       # get submission object comment is attributed to
                     edit = False                                                                    # Flag for whether or not bot is editing a comment or posting a new one
-                    same_as_last = False                                                            # Flag for whether or not the author of the comment being parsed is the same as the last GGG comment of the submission
                     if (link.id in my_comments):                                                    # If bot has responded to submission
                         edit = True                                                                 # Set edit flag to true
-                        if (last_comments[link.id] == comment.author.name):                         # If last GGG post on this submission has the same author as this one
-                            same_as_last = True                                                     # set flag to True
                     snippet = create_snippet(comment, snippet_word_count)                           # create snippet of text from comment, with snippet_word_count words
-                    time = datetime.utcfromtimestamp(comment.created_utc).strftime(ts_format)       # format time from comment timestamp according to ts_format string
+                    timestamp = datetime.utcfromtimestamp(comment.created_utc).strftime(ts_format)       # format time from comment timestamp according to ts_format string
                     
                                                                                                     # Create line text from line_string_format and passed in variables
-                    line = line_string_format().format(time = time,
+                    line = line_string_format().format(name=comment.author.name,
                                                        comment_link = comment.permalink,
                                                        comment_author = comment.author.name,
                                                        text_snippet = snippet,
                                                        context_depth = context_depth)
                     
-                    header = header_string_format().format(name = comment.author.name)              # Create header for post
+                    header = header_string_format()
                     if (edit):                                                                      # If editing bot comment already in thread
                         myReply = reddit.comment(my_comments[link.id])                              # Get the comment to edit
-                        if (same_as_last):                                                          # If same GGG emp as last time
-                            new_body = header + line + myReply.body[myReply.body.index('[['):]      # Set body to header + line + rest of body with previous head stripped.  If changes to formats are made, this line will take heavy editing
-                            myReply.edit(new_body)                                                  # Edit comment body
-                        else:                                                                       # If not some GGG emp as last
-                            myReply.edit(header + line + myReply.body)                              # Edit comment to be header + line + rest of body because stripping text isn't needed
+                        new_body = myReply.body + line
+                        if len(myReply.body) > 9500:
+                            if "comment has become too long to" not in myReply.body:
+                                new_body = myReply.body + "\n\nBeep Boop. This comment has become too long to fit! Please check the GGG reddit user account that is replying so much via their reddit comment history. Please call /r/botsrights"
+                                myReply.edit(new_body)                                                  # Edit comment body
+                        else:
+                          myReply.edit(new_body)                                                  # Edit comment body
                     else:                                                                           # If new post
                         r = link.reply(header + line + footer)                                      # Reply to link with header + line + footer
+                        r.mod.distinguish(sticky=True)
                         my_comments[link.id] = r.id                                                 # Set bot comment to this submission ID to be the new reply
                         save_submissions(my_comments, my_comments_file)                             # Save the updated dictionary
                     last_comments[link.id] = comment.author.name                                    # Set GGG last comment username to be current comment username
                     save_submissions(last_comments, last_comments_file)                             # Save updated dictionary
-            except:
-                if (debug):
-                    print('Failed during some iteration of the for loop.')
+            except Exception as e:
+                print('Failed during some iteration of the for loop.')
+                print(e)
                 continue
-    except:
+    except Exception as e:
+        print('Had an error: {}'.format(e))
         time.sleep(connect_timeout)                                                                 # If failed to stream comments or connect properly, wait for specified duration before trying again
         continue
