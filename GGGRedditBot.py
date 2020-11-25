@@ -49,9 +49,9 @@ def line_string_format():
     # return '\n\n[{name} - [link](https://www.reddit.com{comment_link}?context={context_depth} "{full_comment_text}"), [old](https://old.reddit.com{comment_link}?context={context_depth} "{full_comment_text}")] - *{text_snippet}*\n\n'
     return '\n\n[{name} - [link](https://www.reddit.com{comment_link}?context={context_depth}), [old](https://old.reddit.com{comment_link}?context={context_depth})] - *{text_snippet}*\n\n'
 
-# Bot Response Footer
-footer = '***\n\n*This post was generated automatically.*'
-footer = ''
+def footer_string_format():
+    return '\n\n Normally, I would break here due to too many replies, but this bot is now Bex Proof! Continued below...'
+
 
 # List of GGG Employees --- TODO NEEDS UPDATED
 ggg_emps = [
@@ -138,50 +138,62 @@ reddit = praw.Reddit(user_agent=user_agent_string,
                      username=account_username,
                      password=account_password)
 
-subreddit = reddit.subreddit(subreddit_name)                                                        # connect to specified subreddit
+subreddit = reddit.subreddit(subreddit_name)                                        # connect to specified subreddit
 print('Started bot')
-# count = 1                                                                                           # variable for counting parsed comments
+# count = 1                                                                         # variable for counting parsed comments
+
+def newGGGComment(comment):
+    myReply = None                                                                  # Variable to store comment object of the bot's latest reply
+    edit = False                                                                    # Flag for whether or not bot is editing a comment or posting a new one
+    newSelfReply = False                                                            # Flag if the bot should post a new reply underneath the old one because it has hit the chat limit
+    link = comment.submission                                                       # get submission object comment is attributed to
+    if (link.id in my_comments):                                                    # If bot has responded to submission
+        edit = True                                                                 # Set edit flag to true
+        myReply = reddit.comment(my_comments[link.id])                              # Get the comment to edit 
+        if (len(myReply.body) > 9500):                                              # Checks if current comment associated with post is full
+            newSelfReply = True                                                     # If there is a footer, it will post the new comment in reply to itself instead of a top level comment
+            edit = False
+            if footer_string_format() not in myReply.body:                          # If no footer, add it and recurse
+                new_body = myReply.body + footer_string_format()
+                myReply.edit(new_body)
+                newGGGComment(comment)
+                return
+    snippet = create_snippet(comment, snippet_word_count)                           # create snippet of text from comment, with snippet_word_count words
+    timestamp = datetime.utcfromtimestamp(comment.created_utc).strftime(ts_format)  # format time from comment timestamp according to ts_format string
+                                                                                    # Create line text from line_string_format and passed in variables
+    line = line_string_format().format(name=comment.author.name,
+                                        comment_link = comment.permalink,
+                                        comment_author = comment.author.name,
+                                        text_snippet = snippet,
+                                        context_depth = context_depth)
+    
+    header = header_string_format()
+    if (edit):                                                                      # If editing bot comment already in thread
+        new_body = myReply.body + line
+        myReply.edit(new_body)                                                      
+    else:                                                                           # If not editing, we post a new comment.
+        r = None
+        if newSelfReply:                                                            # If this is true, we reply to ourselves instead of the thread
+            r = myReply.reply(header + line)
+            r.mod.distinguish()
+        else:                                                                       # Else, reply to thread and sticky
+            r = link.reply(header + line)                                           # Reply to link with header + line + footer
+            r.mod.distinguish(sticky=True)
+        my_comments[link.id] = r.id                                                 # Set bot comment to this submission ID to be the new reply (always updated to be the latest comment if replying to itself)
+        save_submissions(my_comments, my_comments_file)                             # Save the updated dictionary
+    last_comments[link.id] = comment.author.name                                    # Set GGG last comment username to be current comment username
+    save_submissions(last_comments, last_comments_file)                             # Save updated dictionary
 
 while True:                                                                                         # main loop to keep bot running
     try:                                                                                            # try around stream in case connection fails
         for comment in subreddit.stream.comments(skip_existing = True):                             # open up a stream of comments, starting from this exact instance onward
             try:                                                                                    # try in case failure during parse
-                # print(str(count) + ': ' + comment.author.name)                                      # Used to log display progress. Isn't needed
-                # count += 1                                                                          # Updated counter to visualize progress. Isn't needed
+                # print(str(count) + ': ' + comment.author.name)                                    # Used to log display progress. Isn't needed
+                # count += 1                                                                        # Updated counter to visualize progress. Isn't needed
                 if comment.author.name in ggg_emps:                                                 # check if comment author in ggg_emps list
                     now = datetime.now()
                     print('Found GGG comment to reply to at {}: /u/{}'.format(now, comment.author.name))
-                    link = comment.submission                                                       # get submission object comment is attributed to
-                    edit = False                                                                    # Flag for whether or not bot is editing a comment or posting a new one
-                    if (link.id in my_comments):                                                    # If bot has responded to submission
-                        edit = True                                                                 # Set edit flag to true
-                    snippet = create_snippet(comment, snippet_word_count)                           # create snippet of text from comment, with snippet_word_count words
-                    timestamp = datetime.utcfromtimestamp(comment.created_utc).strftime(ts_format)       # format time from comment timestamp according to ts_format string
-                    
-                                                                                                    # Create line text from line_string_format and passed in variables
-                    line = line_string_format().format(name=comment.author.name,
-                                                       comment_link = comment.permalink,
-                                                       comment_author = comment.author.name,
-                                                       text_snippet = snippet,
-                                                       context_depth = context_depth)
-                    
-                    header = header_string_format()
-                    if (edit):                                                                      # If editing bot comment already in thread
-                        myReply = reddit.comment(my_comments[link.id])                              # Get the comment to edit
-                        new_body = myReply.body + line
-                        if len(myReply.body) > 9500:
-                            if "comment has become too long to" not in myReply.body:
-                                new_body = myReply.body + "\n\nBeep Boop. This comment has become too long to fit! Please check the GGG reddit user account that is replying so much via their reddit comment history. Please call /r/botsrights"
-                                myReply.edit(new_body)                                                  # Edit comment body
-                        else:
-                          myReply.edit(new_body)                                                  # Edit comment body
-                    else:                                                                           # If new post
-                        r = link.reply(header + line + footer)                                      # Reply to link with header + line + footer
-                        r.mod.distinguish(sticky=True)
-                        my_comments[link.id] = r.id                                                 # Set bot comment to this submission ID to be the new reply
-                        save_submissions(my_comments, my_comments_file)                             # Save the updated dictionary
-                    last_comments[link.id] = comment.author.name                                    # Set GGG last comment username to be current comment username
-                    save_submissions(last_comments, last_comments_file)                             # Save updated dictionary
+                    newGGGComment(comment)
             except Exception as e:
                 print('Failed during some iteration of the for loop.')
                 print(e)
