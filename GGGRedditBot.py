@@ -50,7 +50,8 @@ def line_string_format():
     return '\n\n[{name} - [link](https://www.reddit.com{comment_link}?context={context_depth}), [old](https://old.reddit.com{comment_link}?context={context_depth})] - *{text_snippet}*\n\n'
 
 def footer_string_format():
-    return '\n\n Comment too long! Continued below...'
+    return '\n\n Normally, I would break here due to too many replies, but this bot is now Bex Proof! Continued below...'
+
 
 # List of GGG Employees --- TODO NEEDS UPDATED
 ggg_emps = [
