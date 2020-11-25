@@ -185,7 +185,7 @@ def newGGGComment(comment):
 
 while True:                                                                                         # main loop to keep bot running
     try:                                                                                            # try around stream in case connection fails
-        for comment in subreddit.stream.comments(skip_existing = False):                            # open up a stream of comments, starting from this exact instance onward
+        for comment in subreddit.stream.comments(skip_existing = True):                             # open up a stream of comments, starting from this exact instance onward
             try:                                                                                    # try in case failure during parse
                 # print(str(count) + ': ' + comment.author.name)                                    # Used to log display progress. Isn't needed
                 # count += 1                                                                        # Updated counter to visualize progress. Isn't needed
