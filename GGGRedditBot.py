@@ -65,7 +65,7 @@ ggg_emps = [
     'Blake_GGG',
     'RhysGGG',
     'Dan_GGG',
-    'pantherNZ',
+    'AlexDenfordGGG',
     'Novynn',
     'Fitzy_GGG',
     'Hrishi_GGG',
@@ -84,6 +84,8 @@ ggg_emps = [
     'Natalia2_GGG',
     'viperesque',
     'ZaccieA',
+    'Dominic_GGG',
+    
 ]
 
 if (debug):
